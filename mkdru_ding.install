@@ -1,13 +1,12 @@
 <?php
-
 /**
  * @file
  * Install, update and uninstall functions.
  */
 
 /**
-* Implements hook_install().
-*/
+ * Implements hook_install().
+ */
 function mkdru_ding_install() {
   // Default settings
   $settings['pz2_path'] = "/pazpar2/search.pz2";
@@ -42,8 +41,8 @@ function mkdru_ding_install() {
 }
 
 /**
-* Implements hook_uninstall().
-*/
+ * Implements hook_uninstall().
+ */
 function mkdru_ding_uninstall() {
   variable_del('mkdru_ding');
 }
