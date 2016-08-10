@@ -4,17 +4,17 @@
     var limit = null;
     var limits = [];
     var filters = [];
-    // prepare filter and limit parameters for pz2.search() call
+    // Prepare filter and limit parameters for pz2.search() call.
     for (var facet in mkdru.facets) {
-      // facet is limited
+      // Facet is limited.
       if (mkdru.state['limit_' + facet]) {
-        // source facet in the filter parameter, everything else in limit
-        if (facet == "source") {
+        // Source facet in the filter parameter, everything else in limit.
+        if (facet === "source") {
           filters.push('pz:id=' + mkdru.state.limit_source);
         } else {
           var facetLimits = mkdru.state['limit_' + facet].split(/;+/);
           for (var i = 0; i < facetLimits.length; i++) {
-            // Escape backslashes, commas, and pipes as per docs
+            // Escape backslashes, commas, and pipes as per docs.
             var facetLimit = facetLimits[i];
             facetLimit = facetLimit.replace(/\\/g, '\\\\')
               .replace(/,/g, '\\,')
@@ -54,10 +54,10 @@
     query = decodeURIComponent(query);
     var vars = query.split("&");
     var adv_q = [];
-    for (var i=0;i<vars.length;i++) {
+    for (var i = 0; i < vars.length; i++) {
       var pair = vars[i].split("=");
       pair[0] = pair[0].replace(/[^a-zA-Z ]/g, "");
-      if (pair[0] == 'ti' || pair[0] == 'au') {
+      if (pair[0] === 'ti' || pair[0] === 'au') {
         adv_q.push(pair[0] + '="' + pair[1] + '"');
       }
     }
@@ -66,21 +66,21 @@
   }
 
   mkdru.hashChange = function () {
-    // return to top of page
-    window.scrollTo(0,0);
-    // do we need to restart the search?
+    // Return to top of page.
+    window.scrollTo(0, 0);
+    // Do we need to restart the search?
     var searchTrigger = false;
-    // shallow copy of state so we can see what changed.
+    // Shallow copy of state so we can see what changed.
     var oldState = $.extend({}, mkdru.state);
     mkdru.stateFromHash();
     mkdru.form.fromState();
-    // only have to compare values since all keys are initialised
+    // Only have to compare values since all keys are initialised.
     for (key in mkdru.state) {
-      var changed = (mkdru.state[key] != oldState[key]);
-      if ((key.substring(0,5) === 'limit' || key.substring(0,6) === 'filter') && changed)
+      var changed = (mkdru.state[key] !== oldState[key]);
+      if ((key.substring(0, 5) === 'limit' || key.substring(0, 6) === 'filter') && changed)
         searchTrigger = true;
       if (key === 'page' && changed)
-        mkdru.pz2.showPage(mkdru.state.page-1);
+        mkdru.pz2.showPage(mkdru.state.page - 1);
       if (key === 'query' && changed)
         searchTrigger = true;
       if (key === 'adv_query' && changed)
@@ -88,7 +88,7 @@
     }
     if (searchTrigger)
       mkdru.search();
-    // request for record detail
+    // Request for record detail.
     if (mkdru.state.recid && (mkdru.state.recid != oldState.recid)) {
       mkdru.pz2.record(mkdru.state.recid);
     }
@@ -106,7 +106,7 @@
   };
 
   mkdru.init = function () {
-    // generate termlist for pz2.js and populate facet limit state
+    // Generate termlist for pz2.js and populate facet limit state.
     var termlist = [];
     for (var key in mkdru.facets) {
       termlist.push(mkdru.facets[key].pz2Name);
@@ -124,7 +124,7 @@
     var pz2Params = {
       "pazpar2path": mkdru.settings.pz2_path,
       "termlist": termlist.join(','),
-      "usesessions" : !mkdru.settings.is_service_proxy,
+      "usesessions": !mkdru.settings.is_service_proxy,
       "autoInit": false,
       "showtime": 500, //each timer (show, stat, term, bytarget) can be specified this way
       "showResponseType": mkdru.showResponseType,
@@ -143,35 +143,35 @@
       },
       "onrecord": function (data) {
         $(document).trigger('mkdru.onrecord', [data]);
-      },
+      }
     };
     if (mkdru.settings.mergekey) pz2Params.mergekey = mkdru.settings.mergekey;
     if (mkdru.settings.rank) pz2Params.rank = mkdru.settings.rank;
     if (mkdru.settings.sp_server_auth) pz2Params.pazpar2path += ';jsessionid=' + Drupal.settings.mkdru.jsessionid;
     mkdru.pz2 = new pz2(pz2Params);
     mkdru.pz2.showFastCount = 1;
-    // callback for access to DOM and pz2 object pre-search
-    for (var i=0; i < mkdru.callbacks.length; i++) {
+    // Callback for access to DOM and pz2 object pre-search.
+    for (var i = 0; i < mkdru.callbacks.length; i++) {
 
       mkdru.callbacks[i]();
     }
 
     if (typeof(Drupal.settings.mkdru.state) === "object") {
-      // initialise state with properties from the hash in the URL taking
+      // Initialise state with properties from the hash in the URL taking
       // precedence over initial values passed in from embedding and
-      // with defaults filling in the gaps
+      // with defaults filling in the gaps.
       mkdru.state = $.extend({}, mkdru.defaultState, Drupal.settings.mkdru.state, $.deparam.fragment());
       mkdru.hashFromState();
     } else {
-      // initialise state to hash string or defaults
+      // Initialise state to hash string or defaults.
       mkdru.stateFromHash();
     }
 
-    // update UI to match
+    // Update UI to match.
     mkdru.form.fromState();
 
     if (mkdru.settings.is_service_proxy) {
-      // SP doesn't trigger the init callback
+      // SP doesn't trigger the init callback.
       if (!mkdru.settings.sp_server_auth)
         mkdru.auth();
       else
@@ -181,10 +181,10 @@
     }
   };
 
-  // update mkdru_form theme's ui to match state
+  // Update mkdru_form theme's ui to match state.
   mkdru.FormHandler.prototype.fromState = function () {
     for (var key in mkdru.state) {
-      switch(key) {
+      switch (key) {
         case 'query':
           $('#search-block-form input:text').attr('value', mkdru.state[key]);
           break;
@@ -199,8 +199,6 @@
           break;
       }
     }
-
-
   };
 
   mkdru.FormHandler.prototype.updateCriteria = function () {
