@@ -13,6 +13,6 @@ features[features_api][] = api:2
 features[page_manager_handlers][] = search_mkdru_ding__panel_context_45d2ee5b-af3f-4acd-8f14-c86e310ed0c7
 features[variable][] = mkdru_defaults
 features[variable][] = mkdru_ding
+features[variable][] = page_manager_search_disabled_mkdru_ding
 features[variable][] = search_active_modules
 features[variable][] = search_default_module
-mtime = 1470815835
