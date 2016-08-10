@@ -1,3 +1,9 @@
+<?php
+/**
+ * @file
+ * Results block template.
+ */
+?>
 <div class="mkdru-detail"></div>
 <div class="mkdru-results">
   <div class="mkdru-above mkdru-above-below mkdru-status-container">

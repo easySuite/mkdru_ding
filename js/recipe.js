@@ -1,3 +1,4 @@
+'use strict';
 
 function choose_url (data, proxyPattern) {
     //first try to prepare local_url from recipe
