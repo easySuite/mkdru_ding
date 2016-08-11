@@ -41,7 +41,7 @@
       link = choose_url(hit['location'][0]);
     }
     var html = "";
-    html += '<li class="search-result" id="rec_' + hit.recid + '" >' +
+    html += '<li class="search-result" id="rec_' + hit.recid + '" ><div class="result-inner-wrapper">' +
       '<h3 class="title">';
     if (link) {
       html += '<a href="' + link + '" target="_blank" >';
@@ -86,7 +86,7 @@
     if (dhit["md-subject"] && dhit["md-subject"].length > 0) {
       html += '<div class="mkdru-result-subject"><p>';
       for (var i = 0; i < dhit["md-subject"].length - 1; i++) {
-        html += '<a href="' + basePath + 'search/meta/' + specific_subject_field + dhit["md-subject"][i] + '">' + dhit["md-subject"][i] + '</a> ; ';
+        html += '<a href="' + basePath + 'search/meta/' + specific_subject_field + dhit["md-subject"][i] + '">' + dhit["md-subject"][i] + '</a> ';
       }
       html += '<a href="' + basePath + 'search/meta/' + specific_subject_field + dhit["md-subject"][dhit["md-subject"].length - 1] + '">' + dhit["md-subject"][dhit["md-subject"].length - 1] + '</a></p></div>';
     }
@@ -110,7 +110,7 @@
     html += '</div>';
     html += '</div>';
     html += '</div>';
-    html += '</li>';
+    html += '</div></li>';
     return html;
   };
 
@@ -177,4 +177,53 @@
     }
     return html;
   };
+  /**
+ * Pager theme
+ *
+ * @param pages
+ *   Array of hrefs for page links.
+ * @param start
+ *   Number of first page.
+ * @param current
+ *   Number of current page.
+ * @param total
+ *   Total number of pages.
+ * @param prev
+ *   Href for previous page.
+ * @param next
+ *   Href for next page.
+ */
+Drupal.theme.prototype.mkdruPager = function (pages, start, current, total, prev, next) {
+  var html = "";
+  if (prev)
+    html += '<a href="' + prev + '" class="mkdru-pager-prev">&#60; '
+         + Drupal.t("Prev") + '</a>';
+  else
+    html += '<span class="mkdru-pager-prev">&#60; ' + Drupal.t("Prev")
+         + '</span>';
+
+  if (start > 1)
+    html += ' ';
+
+  for (var i = 0; i < pages.length; i++) {
+    if (i + start == current)
+      html += ' <span class="mkdru-pager-current">' + (i + start) + '</span>';
+    else
+      html += ' <a href="' + pages[i] + '">' + (i + start) + '</a>';
+  }
+
+  if (total > i)
+    html += ' ';
+
+  if (next)
+    html += ' <a href="' + next + '" class="mkdru-pager-next">'
+      + Drupal.t("Next") + ' &#62;</a>';
+  else
+    html += ' <span class="mkdru-pager-next">' + Drupal.t("Next")
+      + ' &#62;</span>';
+
+  return html;
+};
+  
+  
 })(jQuery);
