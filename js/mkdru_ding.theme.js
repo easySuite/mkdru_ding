@@ -2,10 +2,12 @@
   'use strict';
 
   Drupal.theme.mkdruShowFullDescr = function (id) {
+    Drupal.TingSearchOverlay(false);
     document.getElementById("short_" + id).style.display = 'none';
     document.getElementById("full_" + id).style.display = 'block';
   };
   Drupal.theme.mkdruShowShortDescr = function (id) {
+    Drupal.TingSearchOverlay(false);
     document.getElementById("short_" + id).style.display = 'block';
     document.getElementById("full_" + id).style.display = 'none';
   };
