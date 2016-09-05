@@ -1,27 +1,83 @@
 'use strict';
 
-function choose_url (data, proxyPattern) {
-    //first try to prepare local_url from recipe
-    var local_url = data["md-url_recipe"] !== undefined ? prepare_url(data["md-url_recipe"][0], data) : null;
+/**
+ * Function designed to call functions in given order.
+ * @param url
+ * @returns {*}
+ */
+function processExternalUrl(url) {
+  var newUrl;
+  var process_callbacks = Drupal.settings.preprocessExternalUrlCallbacks;
 
-    var use_url_proxy = data["md-use_url_proxy"] !== undefined ? data["md-use_url_proxy"] : "0";
-
-    //use the proxyPattern
-    if (proxyPattern && use_url_proxy == "1") {
-        if (local_url) {
-            data["md-local-url"] = [];
-            data["md-local-url"].push(local_url);
-        }
-        var ref_local_url = prepare_url(proxyPattern, data);
-        if (ref_local_url) return ref_local_url;
+  process_callbacks.forEach(function(item, i, process_callbacks) {
+    if (item === 'ting_proxy') {
+      newUrl = ting_proxy(url);
     }
+  });
 
-    // proxyPattern failed, go for local
-    if (local_url)
-        return local_url;
+  return newUrl;
+}
 
-    //local failed, go for resource
-    return data["md-electronic-url"] !== undefined ? data["md-electronic-url"][0] : null;
+/**
+ * URL processing.
+ * @param data
+ * @returns {*}
+ */
+function ting_proxy(data) {
+  var url;
+  var ting_proxy = Drupal.settings.mkdru_ding.proxy_settings;
+
+  for (var i = 0; i < ting_proxy.hostnames.length; i++) {
+    if (ting_proxy.hostnames[i].hostname === data.hostname && ting_proxy.hostnames[i].disable_prefix === 0) {
+      var regexp = ting_proxy.hostnames[i].expression.regex;
+      var replacement = ting_proxy.hostnames[i].expression.replacement;
+
+      url = ting_proxy.prefix + data.href;
+
+      if (regexp.length > 0 && replacement.length > 0) {
+        var url = url.replace(new RegExp(regexp), replacement);
+      }
+    }
+    else {
+      url = data;
+    }
+  }
+
+  return url;
+}
+
+function choose_url(data, proxyPattern) {
+  //first try to prepare local_url from recipe
+  var local_url = data["md-url_recipe"] !== undefined ? prepare_url(data["md-url_recipe"][0], data) : null;
+
+  var use_url_proxy = data["md-use_url_proxy"] !== undefined ? data["md-use_url_proxy"] : "0";
+
+  //use the proxyPattern
+  if (proxyPattern && use_url_proxy === "1") {
+    if (local_url) {
+      data["md-local-url"] = [];
+      data["md-local-url"].push(local_url);
+    }
+    var ref_local_url = prepare_url(proxyPattern, data);
+    if (ref_local_url) {
+      return ref_local_url;
+    }
+  }
+
+  // proxyPattern failed, go for local
+  if (local_url) {
+    return local_url;
+  }
+
+  // Running through "ting_proxy" if enabled.
+  var ting_proxy = Drupal.settings.mkdru_ding.proxy_settings;
+  if (data["md-electronic-url"] !== undefined && ting_proxy.hostnames.length > 0) {
+    var url = new URL(data["md-electronic-url"][0]);
+    data["md-electronic-url"][0] = processExternalUrl(url);
+  }
+
+  //local failed, go for resource
+  return data["md-electronic-url"] !== undefined ? data["md-electronic-url"][0] : null;
 }
 
 var XRef = function (url, text) {
