@@ -5,18 +5,19 @@
  * @param url
  * @returns {*}
  */
-function processExternalUrl(url) {
-  var newUrl;
-  var process_callbacks = Drupal.settings.preprocessExternalUrlCallbacks;
+Drupal.mkdruProcessExternalUrl = function (url) {
+  var process_callbacks = Drupal.settings.mkdruPreprocessExternalUrlCallbacks;
 
   process_callbacks.forEach(function(item, i, process_callbacks) {
-    if (typeof item === 'ting_proxy') {
-      newUrl = item(url);
+    var urlCallback = window[item];
+
+    if (typeof urlCallback === 'function') {
+      url = urlCallback(url);
     }
   });
 
-  return newUrl;
-}
+  return url;
+};
 
 /**
  * URL processing.
@@ -24,22 +25,24 @@ function processExternalUrl(url) {
  * @returns {*}
  */
 function ting_proxy(data) {
-  var url;
+  var url = new URL(data);
   var ting_proxy = Drupal.settings.mkdru_ding.proxy_settings;
 
-  for (var i = 0; i < ting_proxy.hostnames.length; i++) {
-    if (ting_proxy.hostnames[i].hostname === data.hostname && ting_proxy.hostnames[i].disable_prefix === 0) {
-      var regexp = ting_proxy.hostnames[i].expression.regex;
-      var replacement = ting_proxy.hostnames[i].expression.replacement;
+  if (ting_proxy.hostnames.length > 0) {
+    for (var i = 0; i < ting_proxy.hostnames.length; i++) {
+      if (ting_proxy.hostnames[i].hostname === data.hostname && ting_proxy.hostnames[i].disable_prefix === 0) {
+        var regexp = ting_proxy.hostnames[i].expression.regex;
+        var replacement = ting_proxy.hostnames[i].expression.replacement;
 
-      url = ting_proxy.prefix + data.href;
+        url = ting_proxy.prefix + data.href;
 
-      if (regexp.length > 0 && replacement.length > 0) {
-        var url = url.replace(new RegExp(regexp), replacement);
+        if (regexp.length > 0 && replacement.length > 0) {
+          var url = url.replace(new RegExp(regexp), replacement);
+        }
       }
-    }
-    else {
-      url = data;
+      else {
+        url = data;
+      }
     }
   }
 
@@ -69,11 +72,9 @@ function choose_url(data, proxyPattern) {
     return local_url;
   }
 
-  // Running through "ting_proxy" if enabled.
-  var ting_proxy = Drupal.settings.mkdru_ding.proxy_settings;
-  if (data["md-electronic-url"] !== undefined && ting_proxy.hostnames.length > 0) {
-    var url = new URL(data["md-electronic-url"][0]);
-    data["md-electronic-url"][0] = processExternalUrl(url);
+  // Process url before attach it to the template.
+  if (data['md-electronic-url'] !== undefined) {
+    data["md-electronic-url"][0] = Drupal.mkdruProcessExternalUrl(data["md-electronic-url"][0]);
   }
 
   // Local failed, go for resource.

@@ -288,7 +288,7 @@ function mkdru_ding_search_execute($keys = '', $conditions = NULL) {
 
   drupal_add_js(
     array(
-      'preprocessExternalUrlCallbacks' => $callbacks,
+      'mkdruPreprocessExternalUrlCallbacks' => $callbacks,
     ),
     array('type' => 'setting')
   );
