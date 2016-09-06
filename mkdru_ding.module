@@ -269,6 +269,30 @@ function mkdru_ding_search_execute($keys = '', $conditions = NULL) {
     ),
   ));
 
+  // Integrate ting_proxy features.
+  $callbacks = array();
+  if (module_exists('ting_proxy')) {
+    $proxy_settings = variable_get('ting_proxy', array());
+
+    $callbacks[] = 'ting_proxy';
+    drupal_add_js(
+      array(
+        'mkdru_ding' => array(
+          'proxy_settings' => $proxy_settings,
+        ),
+      ),
+      array('type' => 'setting'));
+  }
+
+  drupal_alter('spt_external_url', $callbacks);
+
+  drupal_add_js(
+    array(
+      'preprocessExternalUrlCallbacks' => $callbacks,
+    ),
+    array('type' => 'setting')
+  );
+
   drupal_add_js($path . '/js/recipe.js');
   drupal_add_js($path . '/js/mkdru_ding.theme.js', array(
     'type' => 'file',

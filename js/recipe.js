@@ -1,27 +1,83 @@
 'use strict';
 
-function choose_url (data, proxyPattern) {
-    //first try to prepare local_url from recipe
-    var local_url = data["md-url_recipe"] !== undefined ? prepare_url(data["md-url_recipe"][0], data) : null;
+/**
+ * Function designed to call functions in given order.
+ * @param url
+ * @returns {*}
+ */
+function processExternalUrl(url) {
+  var newUrl;
+  var process_callbacks = Drupal.settings.preprocessExternalUrlCallbacks;
 
-    var use_url_proxy = data["md-use_url_proxy"] !== undefined ? data["md-use_url_proxy"] : "0";
-
-    //use the proxyPattern
-    if (proxyPattern && use_url_proxy == "1") {
-        if (local_url) {
-            data["md-local-url"] = [];
-            data["md-local-url"].push(local_url);
-        }
-        var ref_local_url = prepare_url(proxyPattern, data);
-        if (ref_local_url) return ref_local_url;
+  process_callbacks.forEach(function(item, i, process_callbacks) {
+    if (typeof item === 'ting_proxy') {
+      newUrl = item(url);
     }
+  });
 
-    // proxyPattern failed, go for local
-    if (local_url)
-        return local_url;
+  return newUrl;
+}
 
-    //local failed, go for resource
-    return data["md-electronic-url"] !== undefined ? data["md-electronic-url"][0] : null;
+/**
+ * URL processing.
+ * @param data
+ * @returns {*}
+ */
+function ting_proxy(data) {
+  var url;
+  var ting_proxy = Drupal.settings.mkdru_ding.proxy_settings;
+
+  for (var i = 0; i < ting_proxy.hostnames.length; i++) {
+    if (ting_proxy.hostnames[i].hostname === data.hostname && ting_proxy.hostnames[i].disable_prefix === 0) {
+      var regexp = ting_proxy.hostnames[i].expression.regex;
+      var replacement = ting_proxy.hostnames[i].expression.replacement;
+
+      url = ting_proxy.prefix + data.href;
+
+      if (regexp.length > 0 && replacement.length > 0) {
+        var url = url.replace(new RegExp(regexp), replacement);
+      }
+    }
+    else {
+      url = data;
+    }
+  }
+
+  return url;
+}
+
+function choose_url(data, proxyPattern) {
+  // First try to prepare local_url from recipe.
+  var local_url = data["md-url_recipe"] !== undefined ? prepare_url(data["md-url_recipe"][0], data) : null;
+
+  var use_url_proxy = data["md-use_url_proxy"] !== undefined ? data["md-use_url_proxy"] : "0";
+
+  // Use the proxyPattern.
+  if (proxyPattern && use_url_proxy === "1") {
+    if (local_url) {
+      data["md-local-url"] = [];
+      data["md-local-url"].push(local_url);
+    }
+    var ref_local_url = prepare_url(proxyPattern, data);
+    if (ref_local_url) {
+      return ref_local_url;
+    }
+  }
+
+  // ProxyPattern failed, go for local.
+  if (local_url) {
+    return local_url;
+  }
+
+  // Running through "ting_proxy" if enabled.
+  var ting_proxy = Drupal.settings.mkdru_ding.proxy_settings;
+  if (data["md-electronic-url"] !== undefined && ting_proxy.hostnames.length > 0) {
+    var url = new URL(data["md-electronic-url"][0]);
+    data["md-electronic-url"][0] = processExternalUrl(url);
+  }
+
+  // Local failed, go for resource.
+  return data["md-electronic-url"] !== undefined ? data["md-electronic-url"][0] : null;
 }
 
 var XRef = function (url, text) {
@@ -64,7 +120,7 @@ function getElectronicUrls (data) {
 
 // Prepares urls from recipes with expressions in the form:
 // ${variable-name[pattern/replacement/mode]}, [regex] is optional
-// eg. http://sever.com?title=${md-title[\s+//]} will strip all whitespaces
+// eg. http://sever.com?title=${md-title[\s+//]} will strip all whitespaces.
 function prepare_url(url_recipe, meta_data) {
     if (typeof url_recipe != "string" || url_recipe.length === 0) {
         return null;
@@ -82,10 +138,10 @@ function prepare_url(url_recipe, meta_data) {
 }
 
 function get_var_value (expr_in, meta_data) {
-    //strip ${ and }
+    // Strip ${ and }.
     var expr = expr_in.substring(2, expr_in.length-1)
     if (expr == "") return "";
-    //extract name
+    // Extract name.
     var var_name = expr.match(/^[^\[]+/)[0];
     if (typeof meta_data[var_name] == "undefined") return "";
     else var var_value = meta_data[var_name][0];
@@ -97,7 +153,7 @@ function get_var_value (expr_in, meta_data) {
     return var_value;
 }
 
-// exec perl-like substitution regexes in the form: pattern/replacement/mode
+// Exec perl-like substitution regexes in the form: pattern/replacement/mode.
 function exec_sregex (regex_str, input_str) {
     var regex_parts = ["", "", ""];
     var i = 0;
