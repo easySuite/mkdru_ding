@@ -61,10 +61,10 @@ a.cross:hover {
   -webkit-border-radius: 12px;
   -moz-border-radius: 12px;
 }
-.page-search-meta .pane-search-form .form-type-textfield {
+#mkdru-ding-search-form .form-type-textfield {
   position: relative;
 }
-.page-search-meta .pane-search-form .form-type-textfield:before {
+#mkdru-ding-search-form .form-type-textfield:before {
   bottom: 30px;
   color: #959595;
   content: "\f002";
