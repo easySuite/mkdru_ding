@@ -310,3 +310,41 @@ function mkdru_ding_search_execute($keys = '', $conditions = NULL) {
 
   return array();
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mkdru_ding_form_search_block_form_alter(&$form, &$form_state, $form_id) {
+  if (!variable_get('ting_field_search_search_style', FALSE)) {
+    return;
+  }
+
+  // Dont't alter the form if this is the node search page.
+  if (strpos(current_path(), 'search/node') === 0) {
+    return;
+  }
+
+  // Setting default value in dropdown.
+  $path = arg();
+  if (!empty($path[1]) && $path[1] == 'meta') {
+    $form['ting_field_search']['#default_value'] = $form['ting_field_search_profile']['#default_value'] = 'meta';
+  }
+
+  $meta_search = array('meta' => t('Search Meta Search'));
+  if (!empty($form['ting_field_search'])) {
+    $form['ting_field_search']['#options'] = $meta_search + $form['ting_field_search']['#options'];
+    $form['#submit'][] = 'mkdru_ding_search_block_form_submit';
+  }
+}
+
+/**
+ * Submit callback for Meta search engine in ting_field_search.
+ */
+function mkdru_ding_search_block_form_submit(&$form, &$form_state) {
+  if ($form_state['input']['ting_field_search'] == 'meta') {
+    $form['#validate'][0] = 'mkdru_ding_search_form_validate';
+    unset($form_state['redirect']);
+    $form_state['action'] = "search/meta";
+    $form_state['redirect'][0] = 'search/meta/' . $form_state['values']['search_block_form'];
+  }
+}
