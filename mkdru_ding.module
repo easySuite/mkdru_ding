@@ -21,7 +21,7 @@ function mkdru_ding_ctools_plugin_directory($module, $plugin) {
  */
 function mkdru_ding_search_info() {
   return array(
-    'title' => 'Meta search',
+    'title' => t('Digital Resources'),
     'path' => 'meta',
     'conditions_callback' => 'mkdru_ding_search_conditions_callback',
   );
@@ -31,7 +31,8 @@ function mkdru_ding_search_info() {
  * Implements hook_search_page().
  */
 function mkdru_ding_search_page($results) {
-  $output['prefix']['#markup'] = theme('mkdru_results');
+  $build = array('#theme' => 'mkdru_results');
+  $output['prefix']['#markup'] = drupal_render($build);
   $output['suffix']['#markup'] = '';
   return $output;
 }
@@ -56,8 +57,9 @@ function mkdru_ding_block_view($delta = '') {
 
   switch ($delta) {
     case 'mkdru_ding_search_results':
+      $build = array('#theme' => 'mkdru_search_results_wrapper');
       $block['subject'] = t('mkdru ding search results');
-      $block['content'] = '<div class="mkdru-pager"></div><div class="mkdru-counts"></div><p></p><div class="mkdru-result-list"></div><div class="mkdru-pager"></div><div class="mkdru-counts"></div>';
+      $block['content'] = drupal_render($build);
       break;
 
     case 'mkdru_search_form':
@@ -72,7 +74,8 @@ function mkdru_ding_block_view($delta = '') {
 /**
  * Search callback function that is invoked by search_view().
  */
-function mkdru_ding_search_conditions_callback($keys) {}
+function mkdru_ding_search_conditions_callback($keys) {
+}
 
 /**
  * Implements hook_ding_facetbrowser().
@@ -181,7 +184,11 @@ function mkdru_ding_theme() {
     ),
     'mkdru_block_facet' => array(
       'template' => 'templates/mkdru-block-facet',
-      'arguments' => array('class' => NULL),
+      'variables' => array('class' => NULL, 'display_name' => NULL),
+    ),
+    'mkdru_search_results_wrapper' => array(
+      'template' => 'templates/mkdru-ding-search-results-wrapper',
+      'variables' => array(),
     ),
   );
 }
@@ -260,31 +267,37 @@ function mkdru_ding_search_execute($keys = '', $conditions = NULL) {
 
   $mkdru_defaults = variable_get('mkdru_defaults', array());
   $path = drupal_get_path('module', 'mkdru_ding');
-  theme('mkdru_js', array(
-    'setting' => array(
+
+  $build = array(
+    '#theme' => 'mkdru_js',
+    '#setting' => array(
       'mkdru' => array(
         'settings' => json_encode($mkdru_defaults['settings']),
         'state' => $state,
       ),
     ),
-  ));
+  );
 
-  // Integrate ting_proxy features.
+  drupal_render($build);
+
   $callbacks = array();
-  if (module_exists('ting_proxy')) {
-    $proxy_settings = variable_get('ting_proxy', array());
-
-    $callbacks[] = 'ting_proxy';
-    drupal_add_js(
-      array(
-        'mkdru_ding' => array(
-          'proxy_settings' => $proxy_settings,
-        ),
-      ),
-      array('type' => 'setting'));
-  }
-
   drupal_alter('spt_external_url', $callbacks);
+
+  if (module_exists('ding_mkws')) {
+    $mkws_settings = variable_get('ding_mkws_global', array());
+
+    if (!empty($mkws_settings)) {
+      $all_resources = $mkws_settings['resources']['values'];
+
+      $resources = array();
+      foreach ($all_resources as $key => $resource) {
+        if (!empty($resource)) {
+          $resources[$key] = $resource;
+        }
+      }
+      drupal_add_js(array('mkdru_mkws_sources' => $resources), array('type' => 'setting'));
+    }
+  }
 
   drupal_add_js(
     array(
@@ -305,6 +318,7 @@ function mkdru_ding_search_execute($keys = '', $conditions = NULL) {
     'type' => 'file',
     'scope' => 'footer',
     'defer' => FALSE,
+    'weight' => 100,
     'preprocess' => TRUE,
   ));
 
@@ -338,6 +352,15 @@ function mkdru_ding_form_search_block_form_alter(&$form, &$form_state, $form_id)
 }
 
 /**
+ * Implements hook_preprocess_HOOK().
+ */
+function mkdru_ding_preprocess_panels_pane(&$vars) {
+  if ($vars['pane']->type == 'search_form' && $vars['pane']->subtype == 'search_form') {
+    $vars['title'] = t('Searching in Digital Resources');
+  }
+}
+
+/**
  * Submit callback for Meta search engine in ting_field_search.
  */
 function mkdru_ding_search_block_form_submit(&$form, &$form_state) {
@@ -347,4 +370,13 @@ function mkdru_ding_search_block_form_submit(&$form, &$form_state) {
     $form_state['action'] = "search/meta";
     $form_state['redirect'][0] = 'search/meta/' . $form_state['values']['search_block_form'];
   }
+}
+
+ /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mkdru_ding_form_ting_search_backend_engines_form_alter(&$form, &$form_state, $form_id) {
+  $title = $form['backends']['searches']['#options']['mkdru_ding'];
+  $title = $title . ' <span class="count mkdru-counts-total">(0)</span>';
+  $form['backends']['searches']['#options']['mkdru_ding'] = $title;
 }
