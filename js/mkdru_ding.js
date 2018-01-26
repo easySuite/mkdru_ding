@@ -1,50 +1,7 @@
+/* global mkdru, pz2 */
 (function ($) {
-  mkdru.search = function () {
-    var filter = null;
-    var limit = null;
-    var limits = [];
-    var filters = [];
-    // Prepare filter and limit parameters for pz2.search() call.
-    for (var facet in mkdru.facets) {
-      // Facet is limited.
-      if (mkdru.state['limit_' + facet]) {
-        // Source facet in the filter parameter, everything else in limit.
-        if (facet === "source") {
-          filters.push('pz:id=' + mkdru.state.limit_source);
-        } else {
-          var facetLimits = mkdru.state['limit_' + facet].split(/;+/);
-          for (var i = 0; i < facetLimits.length; i++) {
-            // Escape backslashes, commas, and pipes as per docs.
-            var facetLimit = facetLimits[i];
-            facetLimit = facetLimit.replace(/\\/g, '\\\\')
-              .replace(/,/g, '\\,')
-              .replace(/\|/g, '\\|');
-            limits.push(mkdru.facets[facet]['pz2Name'] + '=' + facetLimit);
-          }
-        }
-      }
-    }
-
-    if (mkdru.state['filter']) {
-      filters.push(mkdru.state['filter']);
-    }
-    if (limits.length > 0) limit = limits.join(',');
-    if (filters.length > 0) filter = filters.join(',');
-
-    var query = [];
-    if (mkdru.state.query)
-      query.push(mkdru.state.query);
-
-    var advanced_query = get_advanced_search_params();
-    if (advanced_query)
-      query.push(advanced_query);
-
-    query = query.join(" AND ");
-
-    mkdru.pz2.search(query, mkdru.state.perpage,
-      mkdru.sortOrder(), filter, null, {limit: limit});
-    mkdru.active = true;
-  };
+  "use strict";
+  mkdru.pagerRange = 3;
 
   function get_advanced_search_params() {
     var query = window.location.search;
@@ -65,6 +22,75 @@
     return adv_q.join(' AND ');
   }
 
+  mkdru.search = function () {
+    var filter = null;
+    var limit = null;
+    var limits = [];
+    var filters = [];
+
+    // Filtering response by MKWS resources settings.
+    var resources = Drupal.settings.mkdru_mkws_sources;
+
+    if (resources.length !== 0) {
+      var out = 'pz:id=';
+      for (var resource in resources) {
+        out += resource;
+
+        if (resource !== resources.length - 1) {
+          out += '|';
+        }
+      }
+      filter = out;
+      filters.push(filter);
+    }
+
+    // Prepare filter and limit parameters for pz2.search() call.
+    for (var facet in mkdru.facets) {
+      // Facet is limited.
+      if (mkdru.state['limit_' + facet]) {
+        // Source facet in the filter parameter, everything else in limit.
+        if (facet === "source") {
+          filters.push('pz:id=' + mkdru.state.limit_source);
+        } else {
+          var facetLimits = mkdru.state['limit_' + facet].split(/;+/);
+          for (var i = 0; i < facetLimits.length; i++) {
+            // Escape backslashes, commas, and pipes as per docs.
+            var facetLimit = facetLimits[i];
+            facetLimit = facetLimit.replace(/\\/g, '\\\\')
+              .replace(/,/g, '\\,')
+              .replace(/\|/g, '\\|');
+            limits.push(mkdru.facets[facet].pz2Name + '=' + facetLimit);
+          }
+        }
+      }
+    }
+
+    if (mkdru.state.filter) {
+      filters.push(mkdru.state.filter);
+    }
+    if (limits.length > 0) {
+      limit = limits.join(',');
+    }
+    if (filters.length > 0) {
+      filter = filters.join(',');
+    }
+
+    var query = [];
+    if (mkdru.state.query) {
+      query.push(mkdru.state.query);
+    }
+
+    var advanced_query = get_advanced_search_params();
+    if (advanced_query) {
+      query.push(advanced_query);
+    }
+
+    query = query.join(" AND ");
+
+    mkdru.pz2.search(query, mkdru.state.perpage, mkdru.sortOrder(), filter, null, {limit: limit});
+    mkdru.active = true;
+  };
+
   mkdru.hashChange = function () {
     // Return to top of page.
     window.scrollTo(0, 0);
@@ -75,21 +101,23 @@
     mkdru.stateFromHash();
     mkdru.form.fromState();
     // Only have to compare values since all keys are initialised.
-    for (key in mkdru.state) {
+    for (var key in mkdru.state) {
       var changed = (mkdru.state[key] !== oldState[key]);
-      if ((key.substring(0, 5) === 'limit' || key.substring(0, 6) === 'filter') && changed)
+      if (key.substring(0,5) === 'limit' && changed) {
         searchTrigger = true;
-      if (key === 'page' && changed)
+      }
+      if (key === 'page' && changed) {
         mkdru.pz2.showPage(mkdru.state.page - 1);
-      if (key === 'query' && changed)
+      }
+      if (key === 'query' && changed) {
         searchTrigger = true;
-      if (key === 'adv_query' && changed)
-        searchTrigger = true;
+      }
     }
-    if (searchTrigger)
+    if (searchTrigger) {
       mkdru.search();
+    }
     // Request for record detail.
-    if (mkdru.state.recid && (mkdru.state.recid != oldState.recid)) {
+    if (mkdru.state.recid && (mkdru.state.recid !== oldState.recid)) {
       mkdru.pz2.record(mkdru.state.recid);
     }
     else {
@@ -100,8 +128,8 @@
 
   mkdru.addCategory = function (filter) {
     var newHash = $.deparam.fragment();
-    delete newHash['page'];
-    newHash['filter'] = filter;
+    delete newHash.page;
+    newHash.filter = filter;
     return $.param.fragment("#", newHash);
   };
 
@@ -113,7 +141,7 @@
       mkdru.defaultState['limit_' + key] = null;
     }
 
-    mkdru.defaultState['filter'] = null;
+    mkdru.defaultState.filter = null;
 
     $(document).bind('mkdru.onrecord', mkdru.pz2Record);
     $(document).bind('mkdru.onshow', mkdru.pz2Show);
@@ -145,14 +173,20 @@
         $(document).trigger('mkdru.onrecord', [data]);
       }
     };
-    if (mkdru.settings.mergekey) pz2Params.mergekey = mkdru.settings.mergekey;
-    if (mkdru.settings.rank) pz2Params.rank = mkdru.settings.rank;
-    if (mkdru.settings.sp_server_auth) pz2Params.pazpar2path += ';jsessionid=' + Drupal.settings.mkdru.jsessionid;
+    if (mkdru.settings.mergekey) {
+      pz2Params.mergekey = mkdru.settings.mergekey;
+    }
+    if (mkdru.settings.rank) {
+      pz2Params.rank = mkdru.settings.rank;
+    }
+    if (mkdru.settings.sp_server_auth) {
+      pz2Params.pazpar2path += ';jsessionid=' + Drupal.settings.mkdru.jsessionid;
+    }
     mkdru.pz2 = new pz2(pz2Params);
     mkdru.pz2.showFastCount = 1;
+
     // Callback for access to DOM and pz2 object pre-search.
     for (var i = 0; i < mkdru.callbacks.length; i++) {
-
       mkdru.callbacks[i]();
     }
 
@@ -172,10 +206,11 @@
 
     if (mkdru.settings.is_service_proxy) {
       // SP doesn't trigger the init callback.
-      if (!mkdru.settings.sp_server_auth)
+      if (!mkdru.settings.sp_server_auth) {
         mkdru.auth();
-      else
+      } else {
         mkdru.pz2Init();
+      }
     } else {
       mkdru.pz2.init();
     }
@@ -210,4 +245,34 @@
   mkdru.pz2Init = function () {
     mkdru.search();
   };
+
+  mkdru.pz2Show = function (event, data) {
+    mkdru.totalRec = data.merged;
+    $('.mkdru-pager').html(mkdru.generatePager());
+    $('.mkdru-counts').html(Drupal.theme('mkdruCounts',
+      data.num > 0 ? data.start + 1 : 0,
+      data.start + data.num,
+      data.merged,
+      data.total));
+    $('.mkdru-counts-total').html('(' + data.total + ')');
+
+    var html = "";
+    for (var i = 0; i < data.hits.length; i++) {
+      html += Drupal.theme('mkdruResult', data.hits[i],
+        i + 1 + mkdru.state.perpage * (mkdru.state.page - 1),
+        "#" + $.param.fragment($.param.fragment(
+        window.location.href, {recid: data.hits[i].recid}))
+      );
+    }
+    $('.mkdru-result-list').html(html);
+    if (mkdru.state.recid) {
+      mkdru.pz2.record(mkdru.state.recid);
+    }
+    else {
+      $('.mkdru-results').show();
+    }
+
+    // Notify that rendered data is inserted in DOM tree.
+    $(document).trigger('mkdru.onshow.domready', [data]);
+  }
 })(jQuery);

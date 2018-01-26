@@ -100,29 +100,6 @@ function mkdru_ding_default_page_manager_handlers() {
     $display->content['new-81b5e246-5895-4674-b074-274a04d5ca1f'] = $pane;
     $display->panels['left_sidebar'][1] = 'new-81b5e246-5895-4674-b074-274a04d5ca1f';
     $pane = new stdClass();
-    $pane->pid = 'new-60fded5e-de61-4eb3-abb7-0d8cf66cbae1';
-    $pane->panel = 'main_content';
-    $pane->type = 'search_form';
-    $pane->subtype = 'search_form';
-    $pane->shown = TRUE;
-    $pane->access = array();
-    $pane->configuration = array(
-      'override_title' => 0,
-      'override_title_text' => '',
-      'override_title_heading' => 'h2',
-    );
-    $pane->cache = array();
-    $pane->style = array(
-      'settings' => NULL,
-    );
-    $pane->css = array();
-    $pane->extras = array();
-    $pane->position = 0;
-    $pane->locks = array();
-    $pane->uuid = '60fded5e-de61-4eb3-abb7-0d8cf66cbae1';
-    $display->content['new-60fded5e-de61-4eb3-abb7-0d8cf66cbae1'] = $pane;
-    $display->panels['main_content'][0] = 'new-60fded5e-de61-4eb3-abb7-0d8cf66cbae1';
-    $pane = new stdClass();
     $pane->pid = 'new-edd85fdc-a93f-4f4d-9abe-4e3054763919';
     $pane->panel = 'main_content';
     $pane->type = 'search_results';
@@ -141,11 +118,11 @@ function mkdru_ding_default_page_manager_handlers() {
     );
     $pane->css = array();
     $pane->extras = array();
-    $pane->position = 1;
+    $pane->position = 0;
     $pane->locks = array();
     $pane->uuid = 'edd85fdc-a93f-4f4d-9abe-4e3054763919';
     $display->content['new-edd85fdc-a93f-4f4d-9abe-4e3054763919'] = $pane;
-    $display->panels['main_content'][1] = 'new-edd85fdc-a93f-4f4d-9abe-4e3054763919';
+    $display->panels['main_content'][0] = 'new-edd85fdc-a93f-4f4d-9abe-4e3054763919';
   $display->hide_title = PANELS_TITLE_FIXED;
   $display->title_pane = '0';
   $handler->conf['display'] = $display;

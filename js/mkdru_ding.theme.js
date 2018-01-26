@@ -1,5 +1,8 @@
+/* global mkdru, choose_url */
 (function ($) {
   'use strict';
+
+  var href = Drupal.settings.basePath + Drupal.settings.pathPrefix;
 
   Drupal.theme.mkdruShowFullDescr = function (id) {
     Drupal.TingSearchOverlay(false);
@@ -29,22 +32,50 @@
     return s;
   };
 
-  Drupal.theme.mkdruResult = function (hit, num, detailLink) {
+  Drupal.theme.mkdruResult = function (hit) {
     var link = choose_url(hit);
-    var basePath = Drupal.settings.basePath;
     var specific_author_field = "";
     var specific_subject_field = "";
     if (mkdru.settings) {
-      if (mkdru.settings.specific_author_field) specific_author_field = mkdru.settings.specific_author_field + '=';
-      if (mkdru.settings.specific_subject_field) specific_subject_field = mkdru.settings.specific_subject_field + '=';
+      if (mkdru.settings.specific_author_field) {
+        specific_author_field = mkdru.settings.specific_author_field + '=';
+      }
+      if (mkdru.settings.specific_subject_field) {
+        specific_subject_field = mkdru.settings.specific_subject_field + '=';
+      }
     }
 
     if (!link) {
-      link = choose_url(hit['location'][0]);
+      link = choose_url(hit.location[0]);
     }
     var html = "";
-    html += '<li class="search-result" id="rec_' + hit.recid + '" ><div class="result-inner-wrapper">' +
-      '<h3 class="title">';
+
+    html += '<li class="list-item search-result" id="rec_' + hit.recid + '" ><div class="ting-object list-item-style"><div class="inner">';
+
+    html += '<div class="search-snippet-info">' +
+      '<div class="ting-object clearfix">' +
+      '<div class="ting-overview clearfix">' +
+      '<div class="ting-object-left left-column left">' +
+      '<div class="picture">';
+
+    if (hit['md-thumburl']) {
+      html += '<img src="' + hit['md-thumburl'][0] + '" alt="' + hit['md-title'] + '" />';
+    }
+
+    html += '</div>' +
+      '</div>' +
+      '<div class="ting-object-right right-column left">';
+
+
+    // Add target to each result item.
+    var target = '';
+    if (typeof (hit.location[0]['@name']) !== 'undefined') {
+      target =  hit.location[0]['@name'];
+    }
+
+    html += '<span class="mkdru-target">' + target + '</span>';
+
+    html += '<h3 class="title">';
     if (link) {
       html += '<a href="' + link + '" target="_blank" >';
     }
@@ -52,32 +83,25 @@
     if (link) {
       html += '</a>';
     }
-    if (hit['location'][0]['md-medium']) {
-      html += " (" + hit['location'][0]['md-medium'] + ")";
+    if (hit.location[0]['md-medium']) {
+      html += " (" + hit.location[0]['md-medium'] + ")";
     }
     html += '</h3>';
-    html += '<div class="search-snippet-info">' +
-      '<p class="search-snippet"></p>' +
-      '<div class="ting-object clearfix">' +
-      '<div class="ting-overview clearfix">' +
-      '<div class="left-column left">' +
-      '<div class="picture"></div>' +
-      '</div>' +
-      '<div class="right-column left">';
+
     if (hit["md-author"]) {
       // expand on ; and reprint in the same form
       var authors = hit["md-author"][0].split(';');
       html += '<div class="creator"><span class="byline">' + Drupal.t('By') + ' </span>';
       for (var i = 0; i < authors.length - 1; i++) {
-        html += '<a class="author" href="' + basePath + 'search/meta/' + specific_author_field + Drupal.theme.mkdruSafeTrim(authors[i]) + '">' + authors[i] + '</a> ;';
+        html += '<a class="author" href="' + href + 'search/meta/' + specific_author_field + Drupal.theme.mkdruSafeTrim(authors[i]) + '">' + authors[i] + '</a> ;';
       }
-      html += '<a class="author" href="' + basePath + 'search/meta/' + specific_author_field + Drupal.theme.mkdruSafeTrim(authors[authors.length - 1]) + '">' + authors[authors.length - 1] + '</a>';
+      html += '<a class="author" href="' + href + 'search/meta/' + specific_author_field + Drupal.theme.mkdruSafeTrim(authors[authors.length - 1]) + '">' + authors[authors.length - 1] + '</a>';
       if (hit['md-date']) {
         html += '<span class="date"> (' + hit['md-date'] + ')</span>';
       }
       html += '</div><p></p>';
     }
-    var dhit = hit['location'][0];
+    var dhit = hit.location[0];
     if (dhit["md-journal-subpart"]) {
       html += '<div class="mkdru-result-journal-subpart">' + dhit["md-journal-subpart"];
       html += '</div><p/>';
@@ -86,33 +110,40 @@
       html += '</div><p/>';
     }
     if (dhit["md-subject"] && dhit["md-subject"].length > 0) {
+      var search_query;
       html += '<div class="mkdru-result-subject"><p>';
       for (var i = 0; i < dhit["md-subject"].length - 1; i++) {
-        html += '<a href="' + basePath + 'search/meta/' + specific_subject_field + dhit["md-subject"][i] + '">' + dhit["md-subject"][i] + '</a> ';
+        search_query = 'su=&quot;' + specific_subject_field + dhit["md-subject"][i] + '&quot;';
+        html += '<a href="' + href + 'search/meta/' + search_query + '">' + dhit["md-subject"][i] + '</a> ';
       }
-      html += '<a href="' + basePath + 'search/meta/' + specific_subject_field + dhit["md-subject"][dhit["md-subject"].length - 1] + '">' + dhit["md-subject"][dhit["md-subject"].length - 1] + '</a></p></div>';
+      search_query = 'su=&quot;' + specific_subject_field + dhit["md-subject"][dhit["md-subject"].length - 1] + '&quot;';
+      html += '<a href="' + href + 'search/meta/' + search_query + '">' + dhit["md-subject"][dhit["md-subject"].length - 1] + '</a></p></div>';
     }
-    html += "</div>";
     if (hit["md-description"]) {
       // limit description to 600 characters
       var d = hit["md-description"][0];
       var recid = hit.recid;
       html += '<span class="mkdru-result-description">';
-      if (d.length < 620) {
+      if (d.length < 320) {
         html += '<div>' + d + '</div>';
       } else {
         html += '<div id="full_' + recid + '" style="display:none">' +
           d + '<a href="javascript:Drupal.theme.mkdruShowShortDescr(\'' + recid + '\')"> <i>less</i></a></div>';
         html += '<div id="short_' + recid + '" style="display:block">' +
-          Drupal.theme.mkdruTruncateDescr(d, 600) +
+          Drupal.theme.mkdruTruncateDescr(d, 300) +
           '<a href="javascript:Drupal.theme.mkdruShowFullDescr(\'' + recid + '\')"> <i>more</i></a></div>';
       }
       html += '</span>';
     }
+
     html += '</div>';
     html += '</div>';
     html += '</div>';
-    html += '</div></li>';
+    html += '</div>';
+    if (link !== null) {
+      html += '<a href="' + link + '" target="_blank" class="results-see-online">' + Drupal.t("See online") + '</a>';
+    }
+    html += '</div></div></li>';
     return html;
   };
 
@@ -165,7 +196,7 @@
         if (selections[i]) {
           // since we have no target name (only id) go for the basename
           // FIXME get the proper target name
-          var name = facet == "source" ? selections[i].replace(/.*[\/\\]/, "").replace(/\?.*/, '') : selections[i];
+          var name = facet === "source" ? selections[i].replace(/.*[\/\\]/, "").replace(/\?.*/, '') : selections[i];
           html += '<div class="form-item form-type-checkbox">';
           html += '<input type="checkbox" checked="checked" id="' + name + '" ' +
             'onclick="window.location=\'' + mkdru.removeLimit(facet, selections[i]) +
@@ -197,35 +228,29 @@
  */
 Drupal.theme.prototype.mkdruPager = function (pages, start, current, total, prev, next) {
   var html = "";
-  if (prev)
-    html += '<a href="' + prev + '" class="mkdru-pager-prev">&#60; '
-         + Drupal.t("Prev") + '</a>';
-  else
-    html += '<span class="mkdru-pager-prev">&#60; ' + Drupal.t("Prev")
-         + '</span>';
-
-  if (start > 1)
-    html += ' ';
-
-  for (var i = 0; i < pages.length; i++) {
-    if (i + start == current)
-      html += ' <span class="mkdru-pager-current">' + (i + start) + '</span>';
-    else
-      html += ' <a href="' + pages[i] + '">' + (i + start) + '</a>';
+  if (prev) {
+    html += '<li class="pager-previous first"><a href="' + prev + '" class="mkdru-pager-prev">&#60; ' + Drupal.t("Prev") + '</a></li>';
+  }
+  if (start > 1) {
+    html += '<li class="pager-ellipsis">...</li>';
   }
 
-  if (total > i)
-    html += ' ';
+  for (var i = 0; i < pages.length; i++) {
+    if (i + start === current) {
+      html += '<li class="pager-current"><span class="mkdru-pager-current">' + (i + start) + '</span></li>';
+    } else {
+      html += '<li class="pager-item"><a href="' + pages[i] + '">' + (i + start) + '</a></li>';
+    }
+  }
 
-  if (next)
-    html += ' <a href="' + next + '" class="mkdru-pager-next">'
-      + Drupal.t("Next") + ' &#62;</a>';
-  else
-    html += ' <span class="mkdru-pager-next">' + Drupal.t("Next")
-      + ' &#62;</span>';
+  if (total > i && next) {
+    html += '<li class="pager-ellipsis">...</li>';
+  }
+  if (next) {
+    html += '<li class="pager-next last"><a href="' + next + '" class="mkdru-pager-next">' + Drupal.t("Next") + ' &#62;</a></li>';
+  }
 
   return html;
 };
-  
-  
+
 })(jQuery);

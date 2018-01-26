@@ -4,9 +4,15 @@
  * Facet item template.
  */
 ?>
-<div class="mkdru-facet-section">
+<fieldset class="mkdru-facet-fieldset">
   <?php if (isset($name)) : ?>
-    <h3 class="mkdru-facet-title"><?php print $name ?></h3>
+    <legend>
+      <span class="fieldset-legend">
+        <?php print $name; ?>
+      </span>
+    </legend>
   <?php endif; ?>
-  <div class="mkdru-facet <?php print $class ?>"></div>
-</div>
+  <div class="fieldset-wrapper">
+    <div class="mkdru-facet <?php print $class ?>"></div>
+  </div>
+</fieldset>
