@@ -194,41 +194,6 @@ function mkdru_ding_theme() {
 }
 
 /**
- * Custom search form.
- */
-function mkdru_ding_search_form($form, &$form_state) {
-  $form = array();
-  drupal_add_library('system', 'jquery.bbq');
-
-  $form_state['action'] = "search/meta";
-
-  $form['#attributes']['class'][] = 'search-form';
-  $form['#theme'] = 'mkdru_search_form';
-
-  $params = drupal_get_query_parameters();
-
-  $keys = isset($params['query']) ? $params['query'] : arg(2);
-
-  $form['basic']['keys'] = array(
-    '#type' => 'textfield',
-    '#default_value' => $keys,
-    '#maxlength' => 255,
-    '#attributes' => array(
-      'placeholder' => array(t('Search the catalogues, sources and the website...')),
-    ),
-  );
-
-  $form['basic']['submit'] = array(
-    '#type' => 'submit',
-    '#name' => 'simple_search',
-    '#value' => t('Search'),
-    '#submit' => array('mkdru_ding_search_form_submit'),
-    '#validate' => array('mkdru_ding_search_form_validate'),
-  );
-  return $form;
-}
-
-/**
  * Validate handler for advanced search form.
  */
 function mkdru_ding_search_form_validate($form, &$form_state) {
@@ -236,23 +201,6 @@ function mkdru_ding_search_form_validate($form, &$form_state) {
   if (empty($values['keys'])) {
     form_set_error('keys', t('Please specify at least one term.'));
   }
-}
-
-/**
- * Submit handler for simple search form.
- */
-function mkdru_ding_search_form_submit($form, &$form_state) {
-  $params = array();
-  $values = $form_state['values'];
-  if (!empty($values['keys'])) {
-    $params['query'] = $values['keys'];
-  }
-  $form_state['redirect'] = array(
-    $form_state['action'] . '/' . $form_state['values']['keys'],
-    array(
-      'query' => $params,
-    ),
-  );
 }
 
 /**
