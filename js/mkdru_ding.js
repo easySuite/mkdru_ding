@@ -22,6 +22,52 @@
     return adv_q.join(' AND ');
   }
 
+  function _query_normalizer(str) {
+    var query;
+    var matches = [];
+    var newarray= [];
+    var splited = str.split(" ");
+    var get_cql_operators_regexp = '@ and | any | all | adj | or | not |=|\(|\)@i';
+
+    if (str.match(get_cql_operators_regexp)) {
+      splited.forEach(function (item) {
+        // Matching possible term arguments.
+        if (item.match(/"([^"]+)"/)) {
+          matches.push(item.match(/"([^"]+)"/)[1]);
+        }
+        else {
+          matches.push(item);
+        }
+      });
+
+      // Filtering duplications.
+      var unique = matches.filter(function (item, i, allItems) {
+        return i === allItems.indexOf(item);
+      });
+
+      unique.forEach(function(item, i) {
+        if (item.match(/\d+/)) {
+          delete unique[i];
+
+          newarray.push(item);
+        }
+      });
+
+      unique = unique.concat(newarray.pop());
+      unique = unique.filter(function (item) { return item !== undefined; });
+      query = unique.join(' ');
+    }
+    else {
+      query = str;
+    }
+
+    if (query.match(/"([^"]+)"/)) {
+      query = query.match(/"([^"]+)"/)[1];
+    }
+
+    return query;
+  }
+
   mkdru.search = function () {
     var filter = null;
     var limit = null;
@@ -76,8 +122,11 @@
     }
 
     var query = [];
-    if (mkdru.state.query) {
-      query.push(mkdru.state.query);
+
+    var str = _query_normalizer(mkdru.state.query);
+
+    if (str) {
+      query.push(str);
     }
 
     var advanced_query = get_advanced_search_params();
